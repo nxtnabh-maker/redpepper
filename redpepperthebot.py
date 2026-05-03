@@ -7,11 +7,13 @@ import threading
 
 # --- RENDER STAY-ALIVE BRIDGE ---
 app = Flask(__name__)
+
 @app.route('/')
 def home():
     return "RedPepper is Online!"
 
 def run_web():
+    # Render requires the bot to bind to a port
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
@@ -54,20 +56,25 @@ spam_data = {}
 
 @bot.event
 async def on_message(message):
+    # Skip bots and administrators
     if message.author.bot or message.author.guild_permissions.administrator:
         return
+    
     uid = message.author.id
     now = datetime.datetime.now()
     spam_data.setdefault(uid, []).append(now)
     spam_data[uid] = [t for t in spam_data[uid] if (now - t).seconds < 5]
+    
     if len(spam_data[uid]) > 6:
         try:
             await message.author.timeout(datetime.timedelta(minutes=15), reason="RedPepper Anti-Spam")
             await message.channel.send(f"🚫 {message.author.mention} timed out for spamming.", delete_after=10)
-        except: pass
+        except: 
+            pass
+            
     await bot.process_commands(message)
 
 if __name__ == "__main__":
-    # This starts the web server in a separate thread so it doesn't block the bot
+    # Start web server thread so Render doesn't kill the process
     threading.Thread(target=run_web, daemon=True).start()
     bot.run(TOKEN)

@@ -5,7 +5,6 @@ import os
 from flask import Flask
 import threading
 
-# --- RENDER STAY-ALIVE BRIDGE ---
 app = Flask(__name__)
 
 @app.route('/')
@@ -13,15 +12,13 @@ def home():
     return "RedPepper is Online!"
 
 def run_web():
-    # Render requires the bot to bind to a port
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
-# --- BOT CONFIGURATION ---
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=".", intents=intents)
 
-TOKEN = "MTUwMDUzODgxNjYzNTYwNTA5Mg.Gc9Hfx.L1WofPnxBOu-yOFqL0acrGr99cIk_AaEjTlg14"
+TOKEN = os.environ.get("DISCORD_TOKEN")
 WELCOME_CH_ID = 1491394274963488929
 RULES_CH_ID = 1491399916814209085
 
@@ -56,7 +53,6 @@ spam_data = {}
 
 @bot.event
 async def on_message(message):
-    # Skip bots and administrators
     if message.author.bot or message.author.guild_permissions.administrator:
         return
     
@@ -75,6 +71,5 @@ async def on_message(message):
     await bot.process_commands(message)
 
 if __name__ == "__main__":
-    # Start web server thread so Render doesn't kill the process
     threading.Thread(target=run_web, daemon=True).start()
     bot.run(TOKEN)

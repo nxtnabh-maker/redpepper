@@ -1,0 +1,2 @@
+# redpepper
+A discord bot.

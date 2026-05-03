@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 import datetime
 import os
 from flask import Flask
@@ -27,16 +27,33 @@ def get_suffix(n):
         return "th"
     return {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
 
+@tasks.loop(seconds=60)
+async def status_task():
+    await bot.change_presence(
+        status=discord.Status.online, 
+        activity=discord.Activity(type=discord.ActivityType.watching, name="Drago Members")
+    )
+
 @bot.event
 async def on_ready():
     print(f"RedPepper Direct System Online: {bot.user}")
+    if not status_task.is_running():
+        status_task.start()
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def setup(ctx):
+    global WELCOME_CH_ID
+    WELCOME_CH_ID = ctx.channel.id
+    await ctx.send(f"✅ **Success!** Welcome messages will now be sent in {ctx.channel.mention}")
 
 @bot.event
 async def on_member_join(member):
     channel = bot.get_channel(WELCOME_CH_ID)
-    if not channel: return
+    if not channel: 
+        return
     
-    count = member.guild.member_count
+    count = len(member.guild.members) 
     suffix = get_suffix(count)
     
     embed = discord.Embed(
@@ -54,6 +71,7 @@ spam_data = {}
 @bot.event
 async def on_message(message):
     if message.author.bot or message.author.guild_permissions.administrator:
+        await bot.process_commands(message)
         return
     
     uid = message.author.id
@@ -72,4 +90,5 @@ async def on_message(message):
 
 if __name__ == "__main__":
     threading.Thread(target=run_web, daemon=True).start()
-    bot.run(TOKEN)
+    if TOKEN:
+        bot.run(TOKEN)

@@ -53,7 +53,7 @@ async def on_member_join(member):
     if not channel: 
         return
     
-    count = len(member.guild.members) 
+    count = member.guild.member_count 
     suffix = get_suffix(count)
     
     embed = discord.Embed(
